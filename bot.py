@@ -2,7 +2,6 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import json, os
 
-# ===== SECRETS =====
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
@@ -11,6 +10,7 @@ bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 USERS = "users.json"
 BANNED = "banned.json"
 
+reply_mode = {}
 sent_messages = {}
 
 # ===== UTILS =====
@@ -24,61 +24,110 @@ def save(file, data):
     with open(file, "w") as f:
         json.dump(data, f)
 
-# ===== START UI =====
+# ===== START (GOD UI) =====
 @bot.message_handler(commands=['start'])
 def start(m):
     users = load(USERS)
-
     if m.from_user.id not in users:
         users.append(m.from_user.id)
         save(USERS, users)
 
     kb = InlineKeyboardMarkup(row_width=2)
     kb.add(
-        InlineKeyboardButton("📩 Message Admin", callback_data="msg"),
-        InlineKeyboardButton("📊 My Profile", callback_data="me"),
-        InlineKeyboardButton("ℹ️ Help", callback_data="help")
+        InlineKeyboardButton("📩 CONTACT ADMIN", callback_data="msg"),
+        InlineKeyboardButton("👤 PROFILE", callback_data="me")
     )
 
-    text = f"""
-<b>╭━━━〔 🔥 SUPPORT SYSTEM 〕━━━╮</b>
+    bot.send_message(m.chat.id, f"""
+<b>╔═══〔 ⚡ SUPPORT SYSTEM ⚡ 〕═══╗</b>
 
-👋 Welcome <b>{m.from_user.first_name}</b>
+👋 <b>Hello {m.from_user.first_name}</b>
 
-💬 Talk directly with Admin  
-⚡ Fast replies  
-🔒 Private system  
+💬 Direct admin chat  
+⚡ Instant reply system  
+🔒 Fully private & secure  
 
-<b>╰━━━━━━━━━━━━━━━━━━━━━━╯</b>
+━━━━━━━━━━━━━━━━━━━━
 
-✨ Choose below:
-"""
-    bot.send_message(m.chat.id, text, reply_markup=kb)
+🚀 <b>Click below to start</b>
 
-# ===== BUTTONS =====
+<b>╚══════════════════════╝</b>
+
+🔥 <b>BUILD BY YASH</b>
+""", reply_markup=kb)
+
+# ===== BUTTON =====
 @bot.callback_query_handler(func=lambda c: True)
 def cb(c):
     if c.data == "msg":
-        bot.send_message(c.message.chat.id, "✍️ Send your message now...")
-
-    elif c.data == "help":
-        bot.send_message(c.message.chat.id, "📌 Just send anything, admin will reply!")
+        bot.send_message(c.message.chat.id, "✍️ <b>Send your message now...</b>")
 
     elif c.data == "me":
-        bot.send_message(
-            c.message.chat.id,
-            f"👤 Name: {c.from_user.first_name}\n🆔 ID: <code>{c.from_user.id}</code>"
-        )
+        bot.send_message(c.message.chat.id,
+        f"""
+<b>╔═══〔 👤 PROFILE 〕═══╗</b>
+
+👤 Name: <b>{c.from_user.first_name}</b>  
+🆔 ID: <code>{c.from_user.id}</code>
+
+<b>╚══════════════════════╝</b>
+
+🔥 BUILD BY YASH
+""")
+
+    elif c.data == "help":
+        if c.from_user.id != ADMIN_ID:
+            bot.answer_callback_query(c.id, "❌ Only Admin Allowed", show_alert=True)
+            return
+        bot.send_message(c.message.chat.id, HELP_TEXT)
+
+    elif c.data.startswith("reply_"):
+        uid = int(c.data.split("_")[1])
+        reply_mode[c.from_user.id] = uid
+        bot.send_message(ADMIN_ID, f"✍️ Reply to <code>{uid}</code>")
+
+# ===== HELP (ADMIN ONLY) =====
+HELP_TEXT = """
+<b>╔═══〔 ⚙️ ADMIN PANEL 〕═══╗</b>
+
+🔥 <b>FEATURES:</b>
+• Smart Reply Button System  
+• Auto Forward Messages  
+• Seen Status Tracking  
+• Broadcast System  
+• Ban / Unban Control  
+• Direct Messaging  
+• Full Media Support  
+
+━━━━━━━━━━━━━━━━━━━━
+
+⚙️ <b>COMMANDS:</b>
+
+/broadcast → Send to all users  
+/users → Total users  
+/ban USER_ID → Ban  
+/unban USER_ID → Unban  
+/msg USER_ID text → Direct msg  
+
+━━━━━━━━━━━━━━━━━━━━
+
+🧠 <b>SYSTEM FLOW:</b>
+User → Admin  
+Admin taps Reply  
+Message → Same user  
+
+━━━━━━━━━━━━━━━━━━━━
+
+🔥 <b>BUILD BY YASH</b>
+
+<b>╚══════════════════════╝</b>
+"""
 
 # ===== USER → ADMIN =====
-@bot.message_handler(func=lambda m: True,
+@bot.message_handler(func=lambda m: m.chat.id != ADMIN_ID,
 content_types=['text','photo','video','document','audio','voice','sticker'])
 def forward(m):
-    if m.chat.id == ADMIN_ID:
-        return
-
-    banned = load(BANNED)
-    if m.from_user.id in banned:
+    if m.from_user.id in load(BANNED):
         return
 
     users = load(USERS)
@@ -89,51 +138,47 @@ def forward(m):
     uid = m.from_user.id
     uname = m.from_user.username or "NoUsername"
 
-    header = f"""
-<b>╭━━━〔 📩 NEW MESSAGE 〕━━━╮</b>
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("💬 REPLY", callback_data=f"reply_{uid}"))
 
-👤 @{uname}
+    header = f"""
+<b>╔═══〔 📩 NEW MESSAGE 〕═══╗</b>
+
+👤 @{uname}  
 🆔 <code>{uid}</code>
 
-━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━
 """
 
     if m.content_type == "text":
-        bot.send_message(ADMIN_ID, header + f"💬 {m.text}\n<b>╰━━━━━━━━━━━━━━━━━━━━━━╯</b>")
+        bot.send_message(ADMIN_ID, header + f"💬 {m.text}\n\n<b>╚══════════════════════╝</b>", reply_markup=kb)
     else:
         bot.copy_message(ADMIN_ID, m.chat.id, m.message_id)
-        bot.send_message(ADMIN_ID, header + "📎 Media\n<b>╰━━━━━━━━━━━━━━━━━━━━━━╯</b>")
+        bot.send_message(ADMIN_ID, header + "📎 Media\n\n<b>╚══════════════════════╝</b>", reply_markup=kb)
 
 # ===== ADMIN REPLY =====
-@bot.message_handler(func=lambda m: m.chat.id == ADMIN_ID and m.reply_to_message,
+@bot.message_handler(func=lambda m: m.chat.id == ADMIN_ID,
 content_types=['text','photo','video','document','audio','voice','sticker'])
-def reply(m):
-    try:
-        text = m.reply_to_message.text
-        uid = int(text.split("🆔 ")[1].split("\n")[0])
+def admin_reply(m):
+    if ADMIN_ID not in reply_mode:
+        return
 
+    uid = reply_mode[ADMIN_ID]
+    try:
         sent = bot.copy_message(uid, m.chat.id, m.message_id)
         sent_messages[sent.message_id] = uid
-
-        bot.reply_to(m, "✅ Sent")
+        bot.send_message(ADMIN_ID, "✅ Sent")
+        del reply_mode[ADMIN_ID]
     except:
-        bot.reply_to(m, "❌ Failed")
+        bot.send_message(ADMIN_ID, "❌ Failed")
 
-# ===== SEEN SYSTEM =====
+# ===== SEEN =====
 @bot.message_handler(func=lambda m: True)
 def seen(m):
     uid = m.from_user.id
-
     for msg_id, user in list(sent_messages.items()):
         if user == uid:
-            bot.send_message(ADMIN_ID, f"""
-<b>╭━━━〔 👁️ SEEN STATUS 〕━━━╮</b>
-
-✅ User seen your message  
-🆔 <code>{uid}</code>
-
-<b>╰━━━━━━━━━━━━━━━━━━━━━━╯</b>
-""")
+            bot.send_message(ADMIN_ID, f"👁️ Seen by <code>{uid}</code>")
             del sent_messages[msg_id]
             break
 
@@ -142,8 +187,7 @@ def seen(m):
 def broadcast(m):
     if m.chat.id != ADMIN_ID:
         return
-
-    bot.send_message(ADMIN_ID, "📢 Send broadcast message")
+    bot.send_message(ADMIN_ID, "📢 Send message")
     bot.register_next_step_handler(m, send_all)
 
 def send_all(m):
@@ -160,78 +204,35 @@ def send_all(m):
         except:
             pass
 
-    bot.send_message(ADMIN_ID, f"✅ Sent to {count} users")
-
-# ===== PRIVATE TEXT =====
-@bot.message_handler(commands=['msg'])
-def msg_user(m):
-    if m.chat.id != ADMIN_ID:
-        return
-
-    try:
-        parts = m.text.split(" ", 2)
-        uid = int(parts[1])
-        text = parts[2]
-
-        bot.send_message(uid, f"📩 <b>Admin:</b>\n\n{text}")
-        bot.reply_to(m, "✅ Sent")
-    except:
-        bot.reply_to(m, "❌ Use: /msg USER_ID text")
-
-# ===== MEDIA DIRECT =====
-@bot.message_handler(commands=['msgmedia'])
-def msg_media(m):
-    if m.chat.id != ADMIN_ID:
-        return
-
-    try:
-        uid = int(m.text.split()[1])
-        bot.send_message(ADMIN_ID, "📤 Send media now")
-        bot.register_next_step_handler(m, send_media, uid)
-    except:
-        bot.send_message(ADMIN_ID, "❌ Use: /msgmedia USER_ID")
-
-def send_media(m, uid):
-    try:
-        sent = bot.copy_message(uid, m.chat.id, m.message_id)
-        sent_messages[sent.message_id] = uid
-        bot.send_message(ADMIN_ID, "✅ Media Sent")
-    except:
-        bot.send_message(ADMIN_ID, "❌ Failed")
+    bot.send_message(ADMIN_ID, f"✅ Sent to {count}")
 
 # ===== USERS =====
 @bot.message_handler(commands=['users'])
 def users(m):
     if m.chat.id == ADMIN_ID:
-        bot.send_message(ADMIN_ID, f"👥 Total Users: {len(load(USERS))}")
+        bot.send_message(ADMIN_ID, f"👥 {len(load(USERS))} users")
 
 # ===== BAN =====
 @bot.message_handler(commands=['ban'])
 def ban(m):
     if m.chat.id == ADMIN_ID:
-        try:
-            uid = int(m.text.split()[1])
-            b = load(BANNED)
-            if uid not in b:
-                b.append(uid)
-                save(BANNED, b)
-            bot.send_message(ADMIN_ID, "🚫 User Banned")
-        except:
-            bot.send_message(ADMIN_ID, "❌ /ban USER_ID")
+        uid = int(m.text.split()[1])
+        b = load(BANNED)
+        if uid not in b:
+            b.append(uid)
+            save(BANNED, b)
+        bot.send_message(ADMIN_ID, "🚫 Banned")
 
 # ===== UNBAN =====
 @bot.message_handler(commands=['unban'])
 def unban(m):
     if m.chat.id == ADMIN_ID:
-        try:
-            uid = int(m.text.split()[1])
-            b = load(BANNED)
-            if uid in b:
-                b.remove(uid)
-                save(BANNED, b)
-            bot.send_message(ADMIN_ID, "✅ User Unbanned")
-        except:
-            bot.send_message(ADMIN_ID, "❌ /unban USER_ID")
+        uid = int(m.text.split()[1])
+        b = load(BANNED)
+        if uid in b:
+            b.remove(uid)
+            save(BANNED, b)
+        bot.send_message(ADMIN_ID, "✅ Unbanned")
 
-print("🔥 BOT RUNNING 24/7")
+print("🔥 BOT RUNNING - BUILD BY YASH")
 bot.infinity_polling(skip_pending=True)
