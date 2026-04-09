@@ -1,6 +1,6 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
-import os, random, time, threading, psutil
+import os, random, time, threading, psutil, traceback
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
@@ -11,14 +11,29 @@ bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 reply_mode = {}
 live_monitor = False
 
-# ===== GLITCH =====
-def glitch(text):
-    chars = ["▓","▒","░","█","▄","▌","▐"]
-    return "".join(random.choice(chars) if random.random()<0.12 else c for c in text)
+taglines = [
+    "⚡ Lightning Fast Support",
+    "🚀 Powered by Intelligence",
+    "💀 Elite Response System",
+    "🔥 Premium Support Activated",
+    "🧠 Smart AI Routing Enabled"
+]
 
-# ===== MATRIX =====
-def matrix():
-    return "".join(random.choice("01▓▒░█") for _ in range(25))
+# ===== ERROR ALERT =====
+def error_alert(e):
+    try:
+        bot.send_message(ADMIN_ID, f"""
+<b>💀🚨 ╔═══〔 SYSTEM ERROR 〕═══╗ 🚨💀</b>
+
+<code>{e}</code>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ System Issue Detected
+
+<b>╚════════════════════════════╝</b>
+""")
+    except:
+        pass
 
 # ===== ADMIN KEYBOARD =====
 def admin_kb():
@@ -29,101 +44,126 @@ def admin_kb():
 # ===== START =====
 @bot.message_handler(commands=['start'])
 def start(m):
-    msg = bot.send_message(m.chat.id, glitch("⚡ Initializing system...")+"\n"+matrix())
+    try:
+        msg = bot.send_message(m.chat.id, "⚡ Initializing system...")
 
-    for s in ["🚀 Loading modules...","🧠 Connecting core...","💀 Activating system..."]:
-        time.sleep(0.4)
-        bot.edit_message_text(glitch(s)+"\n"+matrix(), m.chat.id, msg.message_id)
+        steps = [
+            "🚀 Loading modules...",
+            "🧠 Connecting to admin core...",
+            "🔐 Establishing secure channel...",
+            "⚡ Finalizing setup..."
+        ]
 
-    bot.edit_message_text(f"""
-<b>💀🚀 ╔═══〔 🚀 ULTRA SUPPORT CORE 🚀 〕═══╗ 🚀💀</b>
+        for s in steps:
+            time.sleep(0.4)
+            bot.edit_message_text(f"""
+<b>💀⚡ SYSTEM START ⚡💀</b>
 
-👋 <b>Welcome, {m.from_user.first_name}</b>
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ <b>⚡ Lightning Fast Support</b>
-
-💬 📡 Direct Admin Connection  
-🔒 🛡️ Secure  
-🚀 ⚡ Instant Delivery  
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📢🔥 <b>SEND MESSAGE</b> 🔥📢
+{s}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ Processing...
 
-💀 ELITE MODE ACTIVATED ⚡
-
-<b>💀🚀 ╚════════════════════════════╝ 🚀💀</b>
+<b>╚══════════════════════╝</b>
 """, m.chat.id, msg.message_id)
 
-    uid = m.from_user.id
-    uname = m.from_user.username or "NoUsername"
+        bot.edit_message_text(f"""
+<b>╔═══〔 🚀 ULTRA SUPPORT CORE 🚀 〕═══╗</b>
 
-    bot.send_message(ADMIN_ID, f"""
-💀🚀 ╔═══〔 NEW USER DETECTED 〕═══╗ 🚀💀
+👋 <b>{m.from_user.first_name}</b>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ <b>{random.choice(taglines)}</b>
+
+💬 Direct Admin Connection  
+🔒 Secure  
+🚀 Instant Delivery  
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📢 SEND MESSAGE TO ADMIN
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💀 ELITE MODE ACTIVATED
+
+<b>╚════════════════════════════╝</b>
+""", m.chat.id, msg.message_id)
+
+        uid = m.from_user.id
+        uname = m.from_user.username or "NoUsername"
+
+        bot.send_message(ADMIN_ID, f"""
+<b>╔═══〔 NEW USER 〕═══╗</b>
 
 👤 @{uname}
-🆔 {uid}
+🆔 <code>{uid}</code>
 
-💀🚀 ╚════════════════════════════╝ 🚀💀
+<b>╚══════════════════╝</b>
 """)
 
-    if m.chat.id == ADMIN_ID:
-        bot.send_message(ADMIN_ID, "💀 ADMIN PANEL", reply_markup=admin_kb())
+        if m.chat.id == ADMIN_ID:
+            bot.send_message(ADMIN_ID, "⚙️ ADMIN PANEL", reply_markup=admin_kb())
+
+    except:
+        error_alert(traceback.format_exc())
 
 # ===== USER → ADMIN =====
-@bot.message_handler(func=lambda m: m.chat.id != ADMIN_ID,
-content_types=['text','photo','video','document','audio','voice','sticker'])
+@bot.message_handler(func=lambda m: m.chat.id != ADMIN_ID)
 def forward(m):
-    uid = m.from_user.id
-    uname = m.from_user.username or "NoUsername"
+    try:
+        uid = m.from_user.id
+        uname = m.from_user.username or "NoUsername"
 
-    kb = InlineKeyboardMarkup()
-    kb.add(
-        InlineKeyboardButton("💬 REPLY", callback_data=f"reply_{uid}"),
-        InlineKeyboardButton("⚡ QUICK REPLY", callback_data=f"reply_{uid}")
-    )
+        kb = InlineKeyboardMarkup()
+        kb.add(InlineKeyboardButton("💬 REPLY", callback_data=f"reply_{uid}"))
 
-    bot.send_message(ADMIN_ID, f"""
-💀📡 ╔═══〔 LIVE MESSAGE STREAM 〕═══╗ 📡💀
+        bot.send_message(ADMIN_ID, f"""
+<b>╔═══〔 LIVE MESSAGE 〕═══╗</b>
 
 👤 @{uname}
-🆔 {uid}
+🆔 <code>{uid}</code>
 
 💬 {m.text}
 
-💀📡 ╚════════════════════════════╝ 📡💀
+<b>╚══════════════════════╝</b>
 """, reply_markup=kb)
 
-    # CHANNEL
-    bot.send_message(CHANNEL_ID, f"""
-💀📡 ╔═══〔 CHANNEL LOG 〕═══╗ 📡💀
+        bot.send_message(CHANNEL_ID, f"""
+<b>╔═══〔 CHANNEL LOG 〕═══╗</b>
 
 👤 @{uname}
-🆔 {uid}
+🆔 <code>{uid}</code>
 
 💬 {m.text}
 
-💀📡 ╚════════════════════════════╝ 📡💀
+<b>╚══════════════════════╝</b>
 """)
 
-    # USER ANIMATION
-    sent = bot.send_message(m.chat.id, glitch("📡 Sending...")+"\n"+matrix())
+        sent = bot.send_message(m.chat.id, "📡 Sending...")
 
-    for s in ["🧠 Connecting...","🔐 Encrypting...","🚀 Delivering..."]:
-        time.sleep(0.3)
-        bot.edit_message_text(glitch(s)+"\n"+matrix(), m.chat.id, sent.message_id)
+        for s in ["⚡ Routing...","🧠 Processing...","🔐 Encrypting...","🚀 Delivering..."]:
+            time.sleep(0.4)
+            bot.edit_message_text(f"""
+<b>💀📡 TRANSMISSION STATUS 📡💀</b>
 
-    bot.edit_message_text("""
-💀🚀 ╔═══〔 TRANSMISSION SUCCESS 〕═══╗ 🚀💀
+{s}
 
-📡 Delivered  
-⚡ Active  
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-💀🚀 ╚════════════════════════════╝ 🚀💀
+<b>╚══════════════════════╝</b>
 """, m.chat.id, sent.message_id)
+
+        bot.edit_message_text("""
+<b>╔═══〔 SUCCESS 〕═══╗</b>
+
+📡 Delivered
+
+<b>╚══════════════════╝</b>
+""", m.chat.id, sent.message_id)
+
+    except:
+        error_alert(traceback.format_exc())
 
 # ===== REPLY =====
 @bot.callback_query_handler(func=lambda c: c.data.startswith("reply_"))
@@ -132,79 +172,94 @@ def reply_btn(c):
     reply_mode[ADMIN_ID] = uid
 
     bot.send_message(ADMIN_ID, f"""
-💀🔒 ╔═══〔 TARGET LOCKED 〕═══╗ 🔒💀
+<b>╔═══〔 TARGET LOCKED 〕═══╗</b>
 
-USER: {uid}
+USER: <code>{uid}</code>
 
-TYPE NOW...
+Send reply
 
-💀🔒 ╚══════════════════════╝ 🔒💀
+<b>╚══════════════════════╝</b>
 """)
 
 # ===== ADMIN REPLY =====
 @bot.message_handler(func=lambda m: m.chat.id == ADMIN_ID)
 def admin_reply(m):
-    if m.text in ["📊 SPEED","⛔ STOP"]:
-        return
+    try:
+        if m.text in ["📊 SPEED","⛔ STOP"]:
+            return
 
-    if ADMIN_ID not in reply_mode:
-        bot.send_message(ADMIN_ID, "❌ Reply dabao")
-        return
+        if ADMIN_ID not in reply_mode:
+            bot.send_message(ADMIN_ID, "❌ Use reply button")
+            return
 
-    uid = reply_mode[ADMIN_ID]
+        uid = reply_mode[ADMIN_ID]
 
-    bot.copy_message(uid, m.chat.id, m.message_id)
-    bot.send_message(CHANNEL_ID, m.text)
+        bot.send_message(uid, m.text)
 
-    sent = bot.send_message(ADMIN_ID, glitch("⚡ Sending..."))
-    time.sleep(0.3)
-    bot.edit_message_text(glitch("📡 Delivering..."), ADMIN_ID, sent.message_id)
-    time.sleep(0.3)
+        bot.send_message(CHANNEL_ID, f"""
+<b>╔═══〔 ADMIN REPLY 〕═══╗</b>
 
-    bot.edit_message_text(f"""
-💀🚀 ╔═══〔 DELIVERY SUCCESS 〕═══╗ 🚀💀
+TO: <code>{uid}</code>
 
-TO: {uid}
+💬 {m.text}
 
-💀🚀 ╚══════════════════════╝ 🚀💀
+<b>╚══════════════════════╝</b>
+""")
+
+        sent = bot.send_message(ADMIN_ID, "⚡ Sending...")
+        for s in ["📡 Delivering...","🧠 Confirming..."]:
+            time.sleep(0.3)
+            bot.edit_message_text(s, ADMIN_ID, sent.message_id)
+
+        bot.edit_message_text(f"""
+<b>╔═══〔 DELIVERY SUCCESS 〕═══╗</b>
+
+TO: <code>{uid}</code>
+
+<b>╚══════════════════════╝</b>
 """, ADMIN_ID, sent.message_id)
 
-    del reply_mode[ADMIN_ID]
+        del reply_mode[ADMIN_ID]
 
-# ===== SPEED =====
+    except:
+        error_alert(traceback.format_exc())
+
+# ===== LIVE SPEED =====
 def live(chat_id, msg_id):
     global live_monitor
     while live_monitor:
-        cpu = psutil.cpu_percent()
-        ram = psutil.virtual_memory().percent
-        speed = round(time.time()*1000 % 1000,2)
+        try:
+            cpu = psutil.cpu_percent()
+            ram = psutil.virtual_memory().percent
+            ping = round(time.time()*1000 % 1000,2)
 
-        bot.edit_message_text(f"""
-💀📊 ╔═══〔 LIVE SYSTEM 〕═══╗ 📊💀
+            bot.edit_message_text(f"""
+<b>╔═══〔 LIVE SYSTEM 〕═══╗</b>
 
-CPU: {cpu}%
-RAM: {ram}%
-SPD: {speed}ms
+⚡ CPU: {cpu}%
+🧠 RAM: {ram}%
+🚀 PING: {ping} ms
 
-{matrix()}
-
-💀📊 ╚══════════════════════╝ 📊💀
+<b>╚══════════════════════╝</b>
 """, chat_id, msg_id)
 
-        time.sleep(2)
+            time.sleep(2)
+        except:
+            error_alert(traceback.format_exc())
+            break
 
 @bot.message_handler(func=lambda m: m.text == "📊 SPEED" and m.chat.id == ADMIN_ID)
 def speed(m):
     global live_monitor
     live_monitor = True
-    msg = bot.send_message(ADMIN_ID, "🚀 Monitor...")
+    msg = bot.send_message(ADMIN_ID, "🚀 Starting Monitor...")
     threading.Thread(target=live, args=(ADMIN_ID, msg.message_id), daemon=True).start()
 
 @bot.message_handler(func=lambda m: m.text == "⛔ STOP" and m.chat.id == ADMIN_ID)
 def stop(m):
     global live_monitor
     live_monitor = False
-    bot.send_message(ADMIN_ID, "⛔ STOPPED")
+    bot.send_message(ADMIN_ID, "⛔ Monitoring Stopped")
 
-print("💀🔥 FINAL BOX CYBER BOT RUNNING 🔥💀")
+print("💀🔥 CLEAN BOX BOT RUNNING 🔥💀")
 bot.infinity_polling(skip_pending=True)
