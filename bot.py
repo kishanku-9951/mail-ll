@@ -14,7 +14,13 @@ live_monitor = False
 # ===== ERROR =====
 def error_alert(e):
     try:
-        bot.send_message(ADMIN_ID, f"💀 ERROR:\n<code>{e}</code>")
+        bot.send_message(ADMIN_ID, f"""
+<b>💀🚨 ╔═══〔 🚨💀 SYSTEM ERROR 💀🚨 〕═══╗ 🚨💀</b>
+
+<code>{e}</code>
+
+<b>💀🚨 ╚════════════════════════════╝ 🚨💀</b>
+""")
     except:
         pass
 
@@ -63,7 +69,7 @@ def start(m):
 <b>💀🚀 ╚════════════════════════════════════╝ 🚀💀</b>
 """, m.chat.id, msg.message_id)
 
-        # ===== NEW USER DETECT (DP) =====
+        # ===== USER DETECT (DP) =====
         uid = m.from_user.id
         uname = m.from_user.username or "NoUsername"
         name = m.from_user.first_name
@@ -99,7 +105,7 @@ def start(m):
     except:
         error_alert(traceback.format_exc())
 
-# ===== USER → ADMIN (MEDIA SUPPORT) =====
+# ===== USER → ADMIN (FULL MEDIA + MIRROR) =====
 @bot.message_handler(func=lambda m: m.chat.id != ADMIN_ID,
 content_types=['text','photo','video','document','audio','voice','sticker'])
 def forward(m):
@@ -119,33 +125,23 @@ def forward(m):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
-        # TEXT
         if m.content_type == "text":
-            bot.send_message(ADMIN_ID, header + f"💬 {m.text}\n\n<b>╚════════════════════════════╝</b>", reply_markup=kb)
+            text_msg = header + f"💬 {m.text}\n\n<b>╚════════════════════════════════════╝</b>"
 
-            bot.send_message(CHANNEL_ID, f"""
-<b>💀📡 ╔═══〔 CHANNEL LOG 〕═══╗ 📡💀</b>
+            bot.send_message(ADMIN_ID, text_msg, reply_markup=kb)
 
-👤 @{uname}
-🆔 {uid}
+            # ✅ SAME MESSAGE CHANNEL पर
+            bot.send_message(CHANNEL_ID, text_msg)
 
-💬 {m.text}
-
-<b>╚════════════════════════════╝</b>
-""")
-
-        # MEDIA
         else:
             bot.copy_message(ADMIN_ID, m.chat.id, m.message_id)
+            bot.send_message(ADMIN_ID, header + "📎 MEDIA RECEIVED\n\n<b>╚════════════════════╝</b>", reply_markup=kb)
 
-            bot.send_message(ADMIN_ID, header + "📎 MEDIA RECEIVED\n\n<b>╚════════════════════════════╝</b>", reply_markup=kb)
+            # ✅ SAME MEDIA CHANNEL पर
+            bot.copy_message(CHANNEL_ID, m.chat.id, m.message_id)
+            bot.send_message(CHANNEL_ID, header + "📎 MEDIA RECEIVED\n\n<b>╚════════════════════╝</b>")
 
-            try:
-                bot.copy_message(CHANNEL_ID, m.chat.id, m.message_id)
-            except:
-                pass
-
-        # USER ANIMATION
+        # animation
         sent = bot.send_message(m.chat.id, "📡 Sending...")
         for s in ["⚡ Routing...","🧠 Processing...","🔐 Encrypting...","🚀 Delivering..."]:
             time.sleep(0.4)
@@ -156,7 +152,7 @@ def forward(m):
     except:
         error_alert(traceback.format_exc())
 
-# ===== REPLY BUTTON =====
+# ===== REPLY =====
 @bot.callback_query_handler(func=lambda c: c.data.startswith("reply_"))
 def reply_btn(c):
     uid = int(c.data.split("_")[1])
@@ -187,10 +183,9 @@ def admin_reply(m):
 
         bot.copy_message(uid, m.chat.id, m.message_id)
 
-        try:
-            bot.send_message(CHANNEL_ID, f"ADMIN REPLY → {uid}\n{m.text}")
-        except:
-            pass
+        # CHANNEL SAME
+        bot.send_message(CHANNEL_ID, f"ADMIN REPLY → {uid}")
+        bot.copy_message(CHANNEL_ID, m.chat.id, m.message_id)
 
         bot.send_message(ADMIN_ID, f"✅ SENT TO {uid}")
 
@@ -234,5 +229,5 @@ def stop(m):
     live_monitor = False
     bot.send_message(ADMIN_ID, "⛔ Stopped")
 
-print("💀🔥 FINAL MEDIA BOT RUNNING 🔥💀")
+print("💀🔥 FULL ORIGINAL UI BOT RUNNING 🔥💀")
 bot.infinity_polling(skip_pending=True)
