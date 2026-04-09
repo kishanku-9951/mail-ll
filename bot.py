@@ -15,11 +15,11 @@ live_monitor = False
 def error_alert(e):
     try:
         bot.send_message(ADMIN_ID, f"""
-<b>💀🚨 ╔═══〔 🚨💀 SYSTEM ERROR 💀🚨 〕═══╗ 🚨💀</b>
+<b>💀🚨 ╔═══〔 SYSTEM ERROR 〕═══╗ 🚨💀</b>
 
 <code>{e}</code>
 
-<b>💀🚨 ╚════════════════════════════╝ 🚨💀</b>
+<b>╚════════════════════════════╝</b>
 """)
     except:
         pass
@@ -69,7 +69,7 @@ def start(m):
 <b>💀🚀 ╚════════════════════════════════════╝ 🚀💀</b>
 """, m.chat.id, msg.message_id)
 
-        # ===== USER DETECT (DP) =====
+        # ===== USER DETECT + DP =====
         uid = m.from_user.id
         uname = m.from_user.username or "NoUsername"
         name = m.from_user.first_name
@@ -105,7 +105,7 @@ def start(m):
     except:
         error_alert(traceback.format_exc())
 
-# ===== USER → ADMIN (FULL MEDIA + MIRROR) =====
+# ===== USER → ADMIN =====
 @bot.message_handler(func=lambda m: m.chat.id != ADMIN_ID,
 content_types=['text','photo','video','document','audio','voice','sticker'])
 def forward(m):
@@ -127,27 +127,52 @@ def forward(m):
 
         if m.content_type == "text":
             text_msg = header + f"💬 {m.text}\n\n<b>╚════════════════════════════════════╝</b>"
-
             bot.send_message(ADMIN_ID, text_msg, reply_markup=kb)
-
-            # ✅ SAME MESSAGE CHANNEL पर
             bot.send_message(CHANNEL_ID, text_msg)
-
         else:
             bot.copy_message(ADMIN_ID, m.chat.id, m.message_id)
-            bot.send_message(ADMIN_ID, header + "📎 MEDIA RECEIVED\n\n<b>╚════════════════════╝</b>", reply_markup=kb)
-
-            # ✅ SAME MEDIA CHANNEL पर
             bot.copy_message(CHANNEL_ID, m.chat.id, m.message_id)
+            bot.send_message(ADMIN_ID, header + "📎 MEDIA RECEIVED\n\n<b>╚════════════════════╝</b>", reply_markup=kb)
             bot.send_message(CHANNEL_ID, header + "📎 MEDIA RECEIVED\n\n<b>╚════════════════════╝</b>")
 
-        # animation
+        # ===== BIG USER DELIVERY UI =====
         sent = bot.send_message(m.chat.id, "📡 Sending...")
-        for s in ["⚡ Routing...","🧠 Processing...","🔐 Encrypting...","🚀 Delivering..."]:
-            time.sleep(0.4)
-            bot.edit_message_text(s, m.chat.id, sent.message_id)
 
-        bot.edit_message_text("✅ Delivered", m.chat.id, sent.message_id)
+        steps = [
+            "⚡🔥 Routing Through Ultra Network...",
+            "🧠⚡ Processing Data Packets...",
+            "🔐🔥 Encrypting Secure Layer...",
+            "📡⚡ Connecting To Admin Core...",
+            "🚀🔥 Delivering Message...",
+            "💀⚡ Final Transmission..."
+        ]
+
+        for s in steps:
+            time.sleep(0.4)
+            bot.edit_message_text(f"""
+<b>💀📡 ╔═══〔 📡 ULTRA TRANSMISSION ENGINE 📡 〕═══╗ 📡💀</b>
+
+{s}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ SPEED: MAX  
+🧠 SYSTEM: ACTIVE  
+📡 STATUS: SENDING  
+
+💀 PLEASE WAIT...
+
+<b>💀📡 ╚════════════════════════════════════╝ 📡💀</b>
+""", m.chat.id, sent.message_id)
+
+        bot.edit_message_text("""
+<b>💀🚀 ╔═══〔 🚀 DELIVERY SUCCESSFUL 🚀 〕═══╗ 🚀💀</b>
+
+📡 YOUR MESSAGE DELIVERED  
+
+💀 STATUS: COMPLETED  
+
+<b>💀🚀 ╚════════════════════════════════════╝ 🚀💀</b>
+""", m.chat.id, sent.message_id)
 
     except:
         error_alert(traceback.format_exc())
@@ -182,12 +207,24 @@ def admin_reply(m):
         uid = reply_mode[ADMIN_ID]
 
         bot.copy_message(uid, m.chat.id, m.message_id)
-
-        # CHANNEL SAME
-        bot.send_message(CHANNEL_ID, f"ADMIN REPLY → {uid}")
         bot.copy_message(CHANNEL_ID, m.chat.id, m.message_id)
 
-        bot.send_message(ADMIN_ID, f"✅ SENT TO {uid}")
+        # ===== BIG ADMIN DELIVERY UI =====
+        sent = bot.send_message(ADMIN_ID, "⚡ Sending...")
+
+        for s in ["📡 Connecting...","🧠 Processing...","🚀 Delivering...","💀 Finalizing..."]:
+            time.sleep(0.3)
+            bot.edit_message_text(s, ADMIN_ID, sent.message_id)
+
+        bot.edit_message_text(f"""
+<b>💀🚀 ╔═══〔 DELIVERY SUCCESS 🚀 〕═══╗ 🚀💀</b>
+
+📤 SENT TO: <code>{uid}</code>
+
+💀 STATUS: COMPLETED  
+
+<b>╚════════════════════════════╝</b>
+""", ADMIN_ID, sent.message_id)
 
         del reply_mode[ADMIN_ID]
 
@@ -229,5 +266,5 @@ def stop(m):
     live_monitor = False
     bot.send_message(ADMIN_ID, "⛔ Stopped")
 
-print("💀🔥 FULL ORIGINAL UI BOT RUNNING 🔥💀")
+print("💀🔥 ULTIMATE BOT RUNNING 🔥💀")
 bot.infinity_polling(skip_pending=True)
