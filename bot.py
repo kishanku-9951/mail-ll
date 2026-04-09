@@ -71,13 +71,13 @@ def start(m):
         info = f"""
 <b>💀🚨 ╔═══〔 🆕🚀 NEW USER DETECTED 🚀🆕 〕═══╗ 🚨💀</b>
 
-👤🔥 <b>NAME:</b> {name} 🔥👤  
-🔗⚡ <b>USERNAME:</b> @{uname} ⚡🔗  
-🆔💀 <b>ID:</b> <code>{uid}</code> 💀🆔  
+👤🔥 NAME: {name} 🔥👤  
+🔗⚡ USERNAME: @{uname} ⚡🔗  
+🆔💀 ID: <code>{uid}</code> 💀🆔  
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📡🔥 STATUS: ONLINE 🔥📡  
-⚡🚀 ACTION: BOT STARTED 🚀⚡  
+📡 STATUS: ONLINE  
+⚡ ACTION: BOT STARTED  
 
 💀 NEW USER ENTERED SYSTEM 💀
 
@@ -99,8 +99,9 @@ def start(m):
     except:
         error_alert(traceback.format_exc())
 
-# ===== USER → ADMIN =====
-@bot.message_handler(func=lambda m: m.chat.id != ADMIN_ID)
+# ===== USER → ADMIN (MEDIA SUPPORT) =====
+@bot.message_handler(func=lambda m: m.chat.id != ADMIN_ID,
+content_types=['text','photo','video','document','audio','voice','sticker'])
 def forward(m):
     try:
         uid = m.from_user.id
@@ -109,31 +110,40 @@ def forward(m):
         kb = InlineKeyboardMarkup()
         kb.add(InlineKeyboardButton("💬🔥 REPLY NOW 🔥💬", callback_data=f"reply_{uid}"))
 
-        bot.send_message(ADMIN_ID, f"""
+        header = f"""
 <b>💀📡 ╔═══〔 📡 LIVE MESSAGE STREAM 📡 〕═══╗ 📡💀</b>
 
 👤 @{uname}
 🆔 <code>{uid}</code>
 
-💬 {m.text}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
 
-<b>╚════════════════════════════════════╝</b>
-""", reply_markup=kb)
+        # TEXT
+        if m.content_type == "text":
+            bot.send_message(ADMIN_ID, header + f"💬 {m.text}\n\n<b>╚════════════════════════════╝</b>", reply_markup=kb)
 
-        # ===== CHANNEL LOG =====
-        try:
             bot.send_message(CHANNEL_ID, f"""
-<b>💀📡 ╔═══〔 📡 CHANNEL LOG 📡 〕═══╗ 📡💀</b>
+<b>💀📡 ╔═══〔 CHANNEL LOG 〕═══╗ 📡💀</b>
 
 👤 @{uname}
-🆔 <code>{uid}</code>
+🆔 {uid}
 
 💬 {m.text}
 
-<b>╚════════════════════════════════════╝</b>
+<b>╚════════════════════════════╝</b>
 """)
-        except Exception as e:
-            error_alert(f"CHANNEL ERROR:\n{e}")
+
+        # MEDIA
+        else:
+            bot.copy_message(ADMIN_ID, m.chat.id, m.message_id)
+
+            bot.send_message(ADMIN_ID, header + "📎 MEDIA RECEIVED\n\n<b>╚════════════════════════════╝</b>", reply_markup=kb)
+
+            try:
+                bot.copy_message(CHANNEL_ID, m.chat.id, m.message_id)
+            except:
+                pass
 
         # USER ANIMATION
         sent = bot.send_message(m.chat.id, "📡 Sending...")
@@ -170,34 +180,19 @@ def reply_btn(c):
 def admin_reply(m):
     try:
         if ADMIN_ID not in reply_mode:
-            bot.send_message(ADMIN_ID, "❌ FIRST CLICK REPLY")
+            bot.send_message(ADMIN_ID, "❌ CLICK REPLY FIRST")
             return
 
         uid = reply_mode[ADMIN_ID]
 
         bot.copy_message(uid, m.chat.id, m.message_id)
 
-        # CHANNEL REPLY
         try:
-            bot.send_message(CHANNEL_ID, f"""
-<b>💀📤 ╔═══〔 ADMIN REPLY 〕═══╗ 📤💀</b>
-
-TO: <code>{uid}</code>
-
-💬 {m.text}
-
-<b>╚════════════════════════════╝</b>
-""")
+            bot.send_message(CHANNEL_ID, f"ADMIN REPLY → {uid}\n{m.text}")
         except:
             pass
 
-        bot.send_message(ADMIN_ID, f"""
-<b>╔═══〔 🚀 DELIVERY SUCCESS 🚀 〕═══╗</b>
-
-📤 SENT TO: <code>{uid}</code>
-
-<b>╚════════════════════════════╝</b>
-""")
+        bot.send_message(ADMIN_ID, f"✅ SENT TO {uid}")
 
         del reply_mode[ADMIN_ID]
 
@@ -239,5 +234,5 @@ def stop(m):
     live_monitor = False
     bot.send_message(ADMIN_ID, "⛔ Stopped")
 
-print("💀🔥 FINAL FULL BOT RUNNING 🔥💀")
+print("💀🔥 FINAL MEDIA BOT RUNNING 🔥💀")
 bot.infinity_polling(skip_pending=True)
