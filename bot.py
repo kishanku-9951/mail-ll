@@ -17,13 +17,7 @@ def error_alert(e):
         bot.send_message(ADMIN_ID, f"""
 <b>💀🚨 ╔═══〔 🚨💀 SYSTEM ERROR 💀🚨 〕═══╗ 🚨💀</b>
 
-⚠️🔥 CRITICAL ERROR 🔥⚠️
-
 <code>{e}</code>
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🧠⚡ SYSTEM FAILURE ⚡🧠  
-📡🔥 ACTION REQUIRED 🔥📡  
 
 <b>💀🚨 ╚════════════════════════════╝ 🚨💀</b>
 """)
@@ -136,15 +130,9 @@ def forward(m):
         bot.send_message(ADMIN_ID, header + "📎🔥 MEDIA RECEIVED 🔥📎\n\n<b>╚══════════╝</b>", reply_markup=kb)
         bot.send_message(CHANNEL_ID, header + "📎🔥 MEDIA RECEIVED 🔥📎")
 
-    # ===== BIG USER DELIVERY UI =====
+    # ===== USER DELIVERY UI =====
     sent = bot.send_message(m.chat.id, "📡🔥 SENDING... 🔥📡")
-
-    for s in [
-        "⚡🔥 ROUTING...",
-        "🧠⚡ PROCESSING...",
-        "🔐🔥 ENCRYPTING...",
-        "🚀⚡ DELIVERING..."
-    ]:
+    for s in ["⚡🔥 ROUTING...","🧠⚡ PROCESSING...","🔐🔥 ENCRYPTING...","🚀⚡ DELIVERING..."]:
         time.sleep(0.4)
         bot.edit_message_text(f"💀📡 {s} 📡💀", m.chat.id, sent.message_id)
 
@@ -158,7 +146,7 @@ def forward(m):
 <b>╚════════════════════════════╝</b>
 """, m.chat.id, sent.message_id)
 
-# ===== REPLY =====
+# ===== REPLY BUTTON =====
 @bot.callback_query_handler(func=lambda c: c.data.startswith("reply_"))
 def reply_btn(c):
     uid = int(c.data.split("_")[1])
@@ -174,16 +162,16 @@ def reply_btn(c):
 <b>╚════════════════════════════╝</b>
 """)
 
-# ===== ADMIN REPLY (FULL MEDIA) =====
-@bot.message_handler(func=lambda m: m.chat.id == ADMIN_ID,
+# ===== CONTROL FILTER (IMPORTANT FIX) =====
+def is_control(m):
+    return m.text in ["📊⚡ SPEED PANEL ⚡📊","⛔🔥 STOP SYSTEM 🔥⛔"]
+
+# ===== ADMIN REPLY (MEDIA + FIX) =====
+@bot.message_handler(func=lambda m: m.chat.id == ADMIN_ID and not is_control(m),
 content_types=['text','photo','video','document','audio','voice','sticker'])
 def admin_reply(m):
 
-    if m.text in ["📊⚡ SPEED PANEL ⚡📊","⛔🔥 STOP SYSTEM 🔥⛔"]:
-        return
-
     if ADMIN_ID not in reply_mode:
-        bot.send_message(ADMIN_ID, "❌ CLICK REPLY FIRST")
         return
 
     uid = reply_mode[ADMIN_ID]
@@ -191,15 +179,9 @@ def admin_reply(m):
     bot.copy_message(uid, m.chat.id, m.message_id)
     bot.copy_message(CHANNEL_ID, m.chat.id, m.message_id)
 
-    # ===== BIG ADMIN DELIVERY UI =====
     sent = bot.send_message(ADMIN_ID, "⚡🔥 SENDING... 🔥⚡")
 
-    for s in [
-        "📡🔥 CONNECTING...",
-        "🧠⚡ PROCESSING...",
-        "🚀🔥 DELIVERING...",
-        "💀⚡ FINALIZING..."
-    ]:
+    for s in ["📡🔥 CONNECTING...","🧠⚡ PROCESSING...","🚀🔥 DELIVERING...","💀⚡ FINALIZING..."]:
         time.sleep(0.3)
         bot.edit_message_text(f"💀📤 {s} 📤💀", ADMIN_ID, sent.message_id)
 
@@ -233,18 +215,18 @@ def live(chat_id, msg_id):
 <b>╚════════════════════════════╝</b>
 """, chat_id, msg_id)
 
-@bot.message_handler(func=lambda m: m.text == "📊⚡ SPEED PANEL ⚡📊" and m.chat.id == ADMIN_ID)
+@bot.message_handler(func=lambda m: m.chat.id == ADMIN_ID and m.text == "📊⚡ SPEED PANEL ⚡📊")
 def speed(m):
     global live_monitor
     live_monitor = True
     msg = bot.send_message(ADMIN_ID, "🚀🔥 STARTING MONITOR... 🔥🚀")
     threading.Thread(target=live, args=(ADMIN_ID, msg.message_id), daemon=True).start()
 
-@bot.message_handler(func=lambda m: m.text == "⛔🔥 STOP SYSTEM 🔥⛔" and m.chat.id == ADMIN_ID)
+@bot.message_handler(func=lambda m: m.chat.id == ADMIN_ID and m.text == "⛔🔥 STOP SYSTEM 🔥⛔")
 def stop(m):
     global live_monitor
     live_monitor = False
     bot.send_message(ADMIN_ID, "⛔🔥 STOPPED 🔥⛔")
 
-print("💀🔥 EMOJI GOD BOT RUNNING 🔥💀")
+print("💀🔥 FINAL FIXED BOT RUNNING 🔥💀")
 bot.infinity_polling(skip_pending=True)
